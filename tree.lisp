@@ -9,8 +9,8 @@
 (defclass commit ()
   ((tree-hash :accessor tree-hash :initarg :tree-hash)
    (parent-hashes :accessor parent-hashes :initarg :parent-hashes :type list)
-   (author :accessor :author :initarg :author)
-   (committer :accessor :committer :initarg :committer)
+   (author :accessor author :initarg :author)
+   (committer :accessor committer :initarg :committer)
    (message :accessor message :initarg :message)))
 
 (defclass tree ()
