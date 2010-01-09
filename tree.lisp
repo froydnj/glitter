@@ -24,6 +24,21 @@
 (defclass blob ()
   ((content :reader content :initarg :content)))
 
+(defun read-number-from-buffer (buffer &key (start 0) end (radix 10))
+  (declare (type (simple-array (unsigned-byte 8) (*)) buffer))
+  (declare (type (integer 2 36) radix))
+  (loop with end = (or end (length buffer))
+     for i from (1- end) downto start
+     for base = 1 then (* base radix)
+     sum (let ((byte (aref buffer i)))
+           (cond
+             ((<= +ascii-zero+ byte +ascii-nine+)
+              (* base (- byte +ascii-zero+)))
+             ((<= +ascii-a+ byte +ascii-z+)
+              (* base (+ 10 (- byte +ascii-a+))))
+             (t (error "Invalid byte: ~A in ~A"
+                       byte (subseq buffer start end)))))))
+
 (defun git-parse-tree-object (buffer)
   (let* ((null-pos (position 0 buffer))
          (space-pos (position (char-code #\Space) buffer))
@@ -33,7 +48,7 @@
                     (null-pos (position 0 buffer :start start))
                     (entry-end (+ null-pos 21)))
                (values (make-instance 'tree-entry
-                                      :mode (archive::read-number-from-buffer buffer :start start :end space-pos)
+                                      :mode (read-number-from-buffer buffer :start start :end space-pos)
                                       :name (sb-ext:octets-to-string buffer :external-format :utf-8 :start (1+ space-pos) :end null-pos)
                                       :sha1 (subseq buffer (1+ null-pos) entry-end))
                        entry-end))))
