@@ -1,0 +1,8 @@
+This is the README for glitter, a library to access git repositories.
+
+glitter does not do very much yet; as you can see from looking at the
+source, it doesn't even have a proper DEFPACKAGE or ASDF system
+definition.  It's not been tested much.  It's mostly being made
+available so that I can hack on it from multiple computers.  If you
+happen to find it useful or improve on it by hacking it yourself, that's
+just a bonus.
