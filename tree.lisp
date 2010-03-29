@@ -32,10 +32,10 @@
      for base = 1 then (* base radix)
      sum (let ((byte (aref buffer i)))
            (cond
-             ((<= +ascii-zero+ byte +ascii-nine+)
-              (* base (- byte +ascii-zero+)))
-             ((<= +ascii-a+ byte +ascii-z+)
-              (* base (+ 10 (- byte +ascii-a+))))
+             ((typep byte '(integer #x30 #x39))
+              (* base (- byte #x30)))
+             ((typep byte '(integer #x61 #x7a))
+              (* base (+ 10 (- byte #x61))))
              (t (error "Invalid byte: ~A in ~A"
                        byte (subseq buffer start end)))))))
 
