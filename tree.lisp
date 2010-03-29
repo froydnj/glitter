@@ -194,8 +194,8 @@
   (loop with contents = (contents index)
      while (<= start end)
      for i = (truncate (+ start end) 2)
-     do (let ((offset (index-name-offset index i))
-              (comparison (compare-shas contents offset sha 0)))
+     do (let* ((offset (index-name-offset index i))
+               (comparison (compare-shas contents offset sha 0)))
           (cond
             ((< comparison 0)
              (setf start (1+ i)))
