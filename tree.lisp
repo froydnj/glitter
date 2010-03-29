@@ -129,6 +129,7 @@
 
 (defmethod shared-initialize :after ((index pack-index) slots &rest initargs
                                      &key filename stream)
+  (declare (ignore initargs filename))
   (let ((contents (make-array (file-length stream)
                               :element-type '(unsigned-byte 8))))
     (read-sequence contents stream)
@@ -137,11 +138,13 @@
 
 (defmethod shared-initialize :after ((index pack-index-v1) slots &rest initargs
                                      &key filename stream)
+  (declare (ignore initargs filename stream))
   (setf (fanout-table index) (read-fanout-table (contents index) 0))
   index)
 
 (defmethod shared-initialize :after ((index pack-index-v2) slots &rest initargs
                                      &key filename stream)
+  (declare (ignore initargs filename stream))
   (let* ((fanout-table (read-fanout-table (contents index) 8))
          (name-table-offset (+ 8 +fanout-table-size+))
          (crc32-table-offset (+ name-table-offset (* 20 +fanout-table-n-entries+)))
