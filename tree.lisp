@@ -147,13 +147,15 @@
   (declare (ignore initargs filename stream))
   (let* ((fanout-table (read-fanout-table (contents index) 8))
          (name-table-offset (+ 8 +fanout-table-size+))
-         (crc32-table-offset (+ name-table-offset (* 20 +fanout-table-n-entries+)))
-         (pack-offset-table-offset (+ crc32-table-offset (* 4 n-fanout-entries))))
+         (crc32-table-offset (+ name-table-offset
+                                (* 20 +fanout-table-n-entries+)))
+         (pack-offset-table-offset (+ crc32-table-offset
+                                      (* 4 +fanout-table-n-entries+))))
     (setf (fanout-table index) fanout-table
           (name-table-offset index) name-table-offset
           (crc32-table-offset index) crc32-table-offset
           (pack-offset-table-offset index) pack-offset-table-offset)
-    pack))
+    index))
 
 (defclass index-entry ()
   ((name :initarg :name :reader name)
