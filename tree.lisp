@@ -136,12 +136,77 @@
     (setf (contents index) contents)
     index))
 
+;;; A v1 index file has the following structure:
+;;;
+;;; - A "fanout" table: a 256-entry array of 32-bit big-endian integers.
+;;;   The easiest way to describe the fanout table is to describe the
+;;;   in-memory data structure can be used to construct:
+;;;
+;;;   [00] -> [...object IDs...] ; A
+;;;   [01] -> NULL
+;;;   [02] -> [...object IDs...] ; B
+;;;   ...
+;;;   [ff] -> [...object IDs...] ; C
+;;;
+;;;   In this table, the entries are sorted lists of object IDs that
+;;;   begin with the index of the slot they occupy.  The list A has
+;;;   object IDs that begin with the byte #x00, the list B has object
+;;;   IDs that begin with the byte #x02, and so forth.
+;;;
+;;;   How do you get there from the fanout table?  The fanout table
+;;;   tracks the cumulative total of object IDs.  So the fanout table
+;;;   looks like:
+;;;
+;;;   [00] -> (length A)
+;;;   [01] -> (length A) ; no object IDs beginning with #x01
+;;;   [02] -> (+ (length A) (length B))
+;;;   ...
+;;;   [ff] -> # of object IDs in packfile
+;;;
+;;;   This is actually not quite right: the lists in the first diagram
+;;;   are (offset, object ID), where OFFSET is a 32-bit big-endian
+;;;   integer that represents an offset into the packfile where the
+;;;   object can be found.
+;;;
+;;; - (offset, object ID) tuples as described above;
+;;;
+;;; - A SHA1 checksum.
 (defmethod shared-initialize :after ((index pack-index-v1) slots &rest initargs
                                      &key filename stream)
   (declare (ignore initargs filename stream))
   (setf (fanout-table index) (read-fanout-table (contents index) 0))
   index)
 
+;;; A v2 index file shares the same underlying structure as a v1 index
+;;; file, but adds a few useful details.  From the top:
+;;;
+;;; - A four-byte magic ID number: *VERSIONED-PACKFILE-SIGNATURE*;
+;;;
+;;; - A 32-bit, big-endian version identifier.  The only version that's
+;;;   currently used is 2;
+;;;
+;;; - A fanout table, as described above.  The concept of counting remains
+;;;   the same, but the per-entry data is split up slightly differently;
+;;;
+;;; - An object ID table, sorted.  There are (AREF FANOUT-TABLE #xff)
+;;;   entries in this table;
+;;;
+;;; - A CRC32 table.  There are (AREF FANOUT-TABLE #xff) entries in this
+;;;   table.  As you might imagine, the entries in this table correspond
+;;;   to the entries in the object ID table.
+;;;
+;;; - An offset table; offsets are 32-bit, big-endian integers.  Same
+;;;   number of entries as the CRC32 table, same correspondence to the
+;;;   object ID table.  Any entries with their most significant bit
+;;;   (MSB) set indicate a 64-bit offset into the packfile.  The
+;;;   remainder of the bits are looked up in a separate table.
+;;;
+;;; - A 64-bit offset table; only present if any entries in the offset
+;;;   table had their MSB set.  Note that this table has as many entries
+;;;   as the number of offset entries with their MSB set, *not* the same
+;;;   number of entries as the earlier tables.
+;;;
+;;; - A SHA1 checksum.
 (defmethod shared-initialize :after ((index pack-index-v2) slots &rest initargs
                                      &key filename stream)
   (declare (ignore initargs filename stream))
