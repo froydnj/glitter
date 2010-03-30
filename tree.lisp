@@ -211,11 +211,10 @@
                                      &key filename stream)
   (declare (ignore initargs filename stream))
   (let* ((fanout-table (read-fanout-table (contents index) 8))
+         (n-objects (aref fanout-table #xff))
          (name-table-offset (+ 8 +fanout-table-size+))
-         (crc32-table-offset (+ name-table-offset
-                                (* 20 +fanout-table-n-entries+)))
-         (pack-offset-table-offset (+ crc32-table-offset
-                                      (* 4 +fanout-table-n-entries+))))
+         (crc32-table-offset (+ name-table-offset (* 20 n-objects)))
+         (pack-offset-table-offset (+ crc32-table-offset (* 4 n-objects))))
     (setf (fanout-table index) fanout-table
           (name-table-offset index) name-table-offset
           (crc32-table-offset index) crc32-table-offset
