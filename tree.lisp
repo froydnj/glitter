@@ -81,7 +81,7 @@
     (read-sequence vec stream)
     vec))
 
-(defvar *versioned-packfile-signature* #())
+(defvar *versioned-index-signature* #(#xff #x74 #x4f #x63))
 
 (defclass pack-index ()
   ((contents :accessor contents)
