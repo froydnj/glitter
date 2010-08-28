@@ -5,7 +5,7 @@
   :author "Nathan Froyd <froydnj@gmail.com>"
   :maintainer "Nathan Froyd <froydnj@gmail.com>"
   :description "A Common Lisp library for accessing git repositories"
-  :depends-on (:binascii)
+  :depends-on (:binascii :ironclad)
   :components ((:static-file "README")
                (:static-file "LICENSE")
                (:file "tree")))
