@@ -42,7 +42,7 @@
 (defun git-parse-tree-object (buffer)
   (let* ((null-pos (position 0 buffer))
          (space-pos (position (char-code #\Space) buffer))
-         (size (archive::read-number-from-buffer buffer :start (1+ space-pos) :end null-pos)))
+         (size (read-number-from-buffer buffer :start (1+ space-pos) :end null-pos)))
     (flet ((read-tree-entry (start)
              (let* ((space-pos (position (char-code #\Space) buffer :start start))
                     (null-pos (position 0 buffer :start start))
