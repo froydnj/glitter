@@ -273,3 +273,65 @@
             (t
              (return-from find-sha-in-index i))))
      finally (return nil)))
+
+;;; Pack files.
+
+(defparameter *packfile-signature* #(#x50 #x41 #x43 #x4b))
+
+(defclass packfile ()
+  ((pathname :initarg :pathname :reader packfile-pathname)
+   (stream :initarg :stream :reader packfile-stream)
+   (version :reader packfile-version)
+   (n-objects :initarg :n-objects :reader packfile-n-objects)))
+
+(defmethod shared-initialize :after ((pack packfile) slots &rest initargs
+                                     &key pathname)
+  (declare (ignore initargs))
+  (with-open-file (stream pathname :direction :input
+                          :element-type '(unsigned-byte 8))
+    (open-packfile-from-stream stream)))
+
+(defconstant +packfile-header-length+ 12)
+(defconstant +tag-object-none+ 0)
+(defconstant +tag-object-commit+ 1)
+(defconstant +tag-object-tree+ 2)
+(defconstant +tag-object-blob+ 3)
+(defconstant +tag-object-tag+ 4)
+(defconstant +tag-object-delta-offset+ 6)
+(defconstant +tag-object-delta-ref+ 7)
+
+(defun open-packfile-from-stream (stream)
+  (let ((header (read-octet-vec stream 12)))
+    (unless (= (ironclad:ub32ref/be header 0)
+               (ironclad:ub32ref/be *packfile-signature* 0))
+      (error "no packfile contained in stream"))
+    (make-instance 'packfile
+                   :stream stream
+                   :n-objects (ironclad:ub32ref/be header 8))))
+
+(defun map-packfile-raw (packfile func)
+  (labels ((compute-object-size (header-bytes)
+             (loop with low-size = (byte (byte 4 0) (first header-bytes))
+                   for byte in (rest header-bytes)
+                   for shift from 4 by 7
+                   sum (ash (ldb (byte 7 0) byte) shift) into size
+                   finally (return (+ low-size size))))
+           (read-msb-bytes (stream)
+             (loop for byte = (read-byte stream nil stream)
+                   collect byte
+                   while (logtest byte #x80)))
+           (read-unpacked-object (stream)
+             (let* ((header-bytes (read-msb-bytes stream))
+                    (object-type (ldb (byte 3 4) (first header-bytes)))
+                    (object-size (compute-object-size header-bytes)))
+               (case object-type
+                 (#.+tag-object-delta-offset+
+                    )
+                 (#.+tag-object-delta-ref+
+                    )
+                 (t
+                    )))))
+    (loop with stream = (packfile-stream packfile)
+            initially (file-position stream +packfile-header-length+)
+          for i from 0 below (packfile-n-objects packfile)
+          do (read-unpacked-object stream))))
